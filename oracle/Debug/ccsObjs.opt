@@ -1,0 +1,7 @@
+"./buttons.o"
+"./main.o"
+"./oracle_helper.o"
+"./scroll.o"
+"./startup_mspm0g350x_ticlang.o"
+"../mspm0g3507.cmd"
+-llibc.a
