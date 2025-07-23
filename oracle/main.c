@@ -69,7 +69,7 @@ void show_next_string() {
 }
 
 void show_full_msg(int idx) {
-    scrll_idx = 0;
+    int scrll_idx = 0;
     string_idx = idx;
 
     int msg_len = strlen(text[idx]);
@@ -274,6 +274,10 @@ int main(void)
                             }
                             break;
 
+                            break;
+                        case KARMA:
+                            karma();
+                            next_state = MENU;
                             break;
                         case OFF:
                             string_idx = 0;
