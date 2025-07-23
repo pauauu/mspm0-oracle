@@ -17,6 +17,7 @@ enum current_state_enum {
     MENU,
     FORTUNE,
     WISH,
+    KARMA,
     OFF,  //other states need to be added (MENU, GAMEPLAY, etc.)
 };
 
@@ -27,7 +28,7 @@ int rand_idx(int min, int max) {
     return (rand_r(&seed) % (max - min + 1) + min);
 }
 int karma = 0;
-//int blink = 0; //keeps track of blinking state for oracle's eyes
+
 void TIMG0_IRQHandler(void){
     // This wakes up the processor!
     switch (TIMG0->CPU_INT.IIDX) {
@@ -38,6 +39,68 @@ void TIMG0_IRQHandler(void){
             break;
     }
 }
+
+uint32_t generateRandomNum(void) {
+    int random_num = 0;
+    TRNG->GPRCM.RSTCTL = TRNG_RSTCTL_RESETASSERT_ASSERT | TRNG_RSTCTL_KEY_UNLOCK_W;
+    TRNG->GPRCM.PWREN  = TRNG_PWREN_KEY_UNLOCK_W | TRNG_PWREN_ENABLE_ENABLE;
+    delay_cycles(POWER_STARTUP_DELAY);
+
+    TRNG->CLKDIVIDE = (uint32_t)TRNG_CLKDIVIDE_RATIO_DIV_BY_2;
+
+    update_reg(&TRNG->CTL, (uint32_t)TRNG_CTL_CMD_NORM_FUNC, TRNG_CTL_CMD_MASK);
+    while (!(TRNG->CPU_INT.RIS & TRNG_RIS_IRQ_CMD_DONE_MASK));
+    TRNG->CPU_INT.ICLR = TRNG_IMASK_IRQ_CMD_DONE_MASK;
+
+    update_reg(&TRNG->CTL, ((uint32_t)0x3 << TRNG_CTL_DECIM_RATE_OFS), TRNG_CTL_DECIM_RATE_MASK);
+    while (!(TRNG->CPU_INT.RIS & TRNG_RIS_IRQ_CAPTURED_RDY_MASK));
+    TRNG->CPU_INT.ICLR = TRNG_IMASK_IRQ_CAPTURED_RDY_MASK;
+    random_num = TRNG->DATA_CAPTURE;
+
+    TRNG->GPRCM.PWREN = TRNG_PWREN_KEY_UNLOCK_W | TRNG_PWREN_ENABLE_DISABLE;
+    return random_num;
+}
+
+//KARMA SETUP/HELPER FUNCTIONS
+void show_next_string() {
+    while (!(any_button_on()));
+    while (any_button_on());    // button depressed
+    while (!(any_button_on())); // button released (debouncing measure)
+}
+
+void show_full_msg(int idx) {
+    scrll_idx = 0;
+    string_idx = idx;
+
+    int msg_len = strlen(text[idx]);
+    uint32_t start_time = button_press_len;
+
+    while (button_press_len - start_time < 4000) {  // scroll for 4 seconds
+        scroller(); // auto scroll -- allows for entirety of a single string to be shown to the user
+    }
+
+    //this scroll is controlled by the user and waits for them to press the button to show the next string
+    show_next_string();
+}
+
+//generate a fortune based on the karma score
+uint32_t generate_fortune(int karma_score) {
+    int base = 0;
+    int range = 10;
+    uint32_t random_num = generateRandomNum();
+    int offset = random_num % range;
+
+    if (karma_score >= 2 && karma_score <= 4) {
+        // Good fortunes: 13–22
+        base = 13;
+    } else if (karma_score >= -4 && karma_score <= -1) {
+        // Bad fortunes: 23–32
+        base = 23;
+    }
+    return base + offset;
+
+}
+
 int main(void)
 {
             InitializeProcessor();
