@@ -68,8 +68,9 @@ void show_next_string() {
     while (!(any_button_on())); // button released (debouncing measure)
 }
 
+int scrll_idx;
 void show_full_msg(int idx) {
-    int scrll_idx = 0;
+    scrll_idx = 0;
     string_idx = idx;
 
     int msg_len = strlen(text[idx]);
@@ -100,6 +101,107 @@ uint32_t generate_fortune(int karma_score) {
     return base + offset;
 
 }
+
+void karma() {
+    //display instructions and options to the user
+    scrll_idx = 0;
+    string_idx = 33; //karma instructions 1
+    button_press_len = 0;
+    update_displays();
+    show_next_string();
+
+    scrll_idx = 0;
+    string_idx = 34; //karma instructions 2
+    button_press_len = 0;
+    update_displays();
+    show_next_string();
+
+    for (int i = 35; i < 39; i++) {
+        show_full_msg(i);
+    }
+
+    /*now, register their button presses and calculate their karma score*/
+    //setup variables
+    int karma_score = 0;
+    int press_count = 0;
+    int last_press = 0;
+    int button_press_length = 0;
+    int time_btwn_presses = 0;
+    int start_time = 0;
+    int end_time = 0;
+    int max_options = 4;
+    int selections = 0; //indicates how many options the user has selected so far
+
+    while (selections < max_options) {
+        if (button_on(SW3)) { //button pressed
+            start_time = button_press_length; //reset the timer
+
+            while (button_on(SW3)) {
+                //wait for the button to be released
+            };
+
+            end_time = button_press_length;
+            time_btwn_presses = start_time - last_press;
+
+            if (time_btwn_presses > 1000) {
+                //reset the number of presses because too much time has passed
+                press_count = 0;
+            } else {
+                press_count++;
+            }
+
+            last_press =  start_time;
+
+            uint32_t chain_start = button_press_length;
+            while ((button_press_length - chain_start) < 1000) { //time between presses less than 1s
+                if (button_on(SW3)) {
+                    // New press detected
+                    break;
+                }
+            }
+
+            if (press_count == 1) {
+                karma_score += 3; //option A
+            } else if (press_count == 2) {
+                karma_score += 1; //option B
+            } else if (press_count == 3) {
+                karma_score -= 1; //option C
+            } else if (press_count == 4) {
+                karma_score -= 3; //option D
+            } else {
+                /*could be nice if we had an error music packet here that plays here for too many presses;
+                for now, do nothing...*/
+            }
+
+            selections++;
+            press_count = 0;
+        }}
+
+        if (karma_score > 4 || karma_score < -4) {
+            //error music packet here
+        } else if (karma_score >= -4 && karma_score <= -1) {
+            // bad msg
+            int fortune_index = 23 + (generateRandomNum() % 10);
+            string_idx = fortune_index;
+            scrll_idx = 0;
+            update_displays();
+            show_next_string();
+        } else if (karma_score == 0 && karma_score == 1) {
+            //neutral msg
+            string_idx = 39; //PRE-SET NEUTRAL FORTUNE
+            scrll_idx = 0;
+            update_displays();
+            show_next_string();
+        } else if (karma_score >= 2 && karma_score <= 4) {
+            //good message
+            int fortune_index = 13 + (generateRandomNum() % 10);
+            string_idx = fortune_index;
+            scrll_idx = 0;
+            update_displays();
+            show_next_string();
+        }
+    }
+
 
 int main(void)
 {
