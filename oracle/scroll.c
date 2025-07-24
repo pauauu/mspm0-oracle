@@ -156,6 +156,9 @@ uint32_t last_scroll_time = 0;
 uint8_t reverse_held = 0;
 uint32_t last_reverse_time = 0;
 
+#define SET_PIN_HIGH(PORT,PIN)  ((PORT)->DOUTSET31_0 = (1u << (PIN)))
+#define SET_PIN_LOW(PORT,PIN)  ((PORT)->DOUTCLR31_0 = (1u << (PIN)))
+
 //update display when new letter
 void update_displays() {
     for (int i = 0; i < DISPLAY_COUNT; i++) {
@@ -166,11 +169,12 @@ void update_displays() {
 }
 
 //forward automatic and backwards presses scroll
-void scroller() {
-    //Forward scroll
+void scroller(void) {
+    //Forward scroll every 500ms
     if (press_len - last_scroll_time >= 500) {
         scroll_idx++;
-        if (scroll_idx > strlen(text[string_idx])) scroll_idx = 0;
+        if (scroll_idx > strlen(text[string_idx]))
+            scroll_idx = 0;
         update_displays();
         last_scroll_time = press_len;
     }
@@ -187,8 +191,8 @@ void scroller() {
         reverse_held = 0;
     }
 }
-int scrll_idx;
-int button_press_len;
+//int scrll_idx; // we use both scroll_idx and scrll_idx but i think we should only be using one of these unless i am misunderstanding something
+//int button_press_len; // we use both press_len and button_press_len but i think we should only be using one of these unless i am misunderstanding something
 void show_next_string() {
     while (!(any_button_on()));
     while (any_button_on());    // button depressed
@@ -196,13 +200,15 @@ void show_next_string() {
 }
 
 void show_full_msg(int idx) {
-    scrll_idx = 0;
+    scroll_idx = 0; // changed scrll_idx to scroll_idx
     string_idx = idx;
+    update_displays();
 
     int msg_len = strlen(text[idx]);
-    uint32_t start_time = button_press_len;
+    // uint32_t start_time = button_press_len;
+    uint32_t start_time = press_len;
 
-    while (button_press_len - start_time < 4000) {  // scroll for 4 seconds
+    while (press_len - start_time < 4000) {  // scroll for 4 seconds
         scroller(); // auto scroll -- allows for entirety of a single string to be shown to the user
     }
 
