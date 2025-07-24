@@ -293,8 +293,9 @@ int main(void)
                     int SW1_on = button_on(SW1);
                     int SW2_on = button_on(SW2);
                     int SW3_on = button_on(SW3);
-                    button_press_len++; // Increment button press length
+                    press_len++; // Increment button press length
                     sw3_counter(button_press_len); // Debouncer
+                    scroller();
                     switch(next_state) {
                         case ASLEEP:
                             string_idx = 1;
