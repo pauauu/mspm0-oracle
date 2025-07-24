@@ -6,6 +6,7 @@
 #include <oracle_helper.h>
 #include <scroll.h>
 #include <buttons.h>
+#include <text.h>
 extern int string_idx;
 int timerTicked = 0;
 /**
@@ -292,6 +293,8 @@ int main(void)
                     int SW1_on = button_on(SW1);
                     int SW2_on = button_on(SW2);
                     int SW3_on = button_on(SW3);
+                    button_press_len++; // Increment button press length
+                    sw3_counter(button_press_len); // Debouncer
                     switch(next_state) {
                         case ASLEEP:
                             string_idx = 1;
